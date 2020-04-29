@@ -1,12 +1,18 @@
 #[derive(Clone, Copy, PartialEq, PartialOrd, Eq, Debug)]
 struct Relation {
     name: &'static str,
+    inherited_from: fn() -> Vec<Relation>,
+}
+
+fn none() -> Vec<Relation> {
+    vec![]
 }
 
 impl Relation {
     fn from_name(name: &'static str) -> Relation {
         Relation {
             name,
+            inherited_from: none,
         }
     }
 }
@@ -16,12 +22,12 @@ struct Object {
     namespace: &'static str,
     object_id: &'static str,
 }
-#[derive(Clone, PartialEq, PartialOrd, Eq, Debug)]
+#[derive(Clone, Copy, PartialEq, PartialOrd, Eq, Debug)]
 struct UserSet {
     object: Object,
     relation: Relation,
 }
-#[derive(Clone, PartialEq, PartialOrd, Eq, Debug)]
+#[derive(Clone, Copy, PartialEq, PartialOrd, Eq, Debug)]
 enum User {
     Id(u64),
     Set(UserSet),
@@ -60,21 +66,19 @@ impl RelDB {
                 } else {
                     let user = UserSet {
                         object: db_rel.object,
-                        relation: db_rel.relation.clone(),
+                        relation: db_rel.relation,
                     };
 
                     let user = User::Set(user);
-                    if self.check(user, obj, rel.clone()) {
+                    if self.check(user, obj, rel) {
                         return true;
                     }
 
-                    //let rewrites = rel.inherited_from.map_or(vec![], |f| f());
-
-                    // for re_rel in rel.inherited_from.iter() {
-                    //     if self.check(user, obj, *re_rel) {
-                    //         return true;
-                    //     }
-                    // }
+                    for re_rel in (rel.inherited_from)().iter() {
+                        if self.check(user, obj, *re_rel) {
+                            return true;
+                        }
+                    }
                 }
             }
         }
@@ -89,15 +93,14 @@ fn main() {
     // define owner relation
     let owner = Relation::from_name("owner");
 
-    // define editor relation
-
     // define viewer relation
     fn view_rewrite() -> Vec<Relation> {
         vec![Relation::from_name("owner")]
     }
 
-    let viewer = Relation {
-        name: "viewer",
+    let viewer = Relation { 
+        name: "viewer" ,
+        inherited_from: view_rewrite,
     };
 
     let member = Relation::from_name("member");
