@@ -75,7 +75,7 @@ impl RelDB {
                     }
 
                     for re_rel in (rel.inherited_from)().iter() {
-                        if self.check(user, obj, *re_rel) {
+                        if self.check(check_rel.user, obj, *re_rel) {
                             return true;
                         }
                     }
@@ -146,12 +146,23 @@ fn main() {
         }),
     });
 
+    // let folder_a = Object{namespace: "folder", object_id: "a"};
+
+    // db.add(RelTuple{
+    //     object: readme, 
+    //     relation: Relation::from_name("parent"),
+    //     user: User::Set(UserSet{
+    //         object: folder_a, 
+    //         relation: Relation::from_name("#..")
+    //     })
+    // });
+
     assert!(db.check(User::Id(10), readme, owner));
     assert!(db.check(User::Id(11), eng_group, member));
     assert!(db.check(User::Id(11), readme, viewer));
 
     // inherited from owner
-    assert!(db.check(User::Id(11), readme, viewer));
+    assert!(db.check(User::Id(10), readme, viewer));
 
     assert_eq!(db.check(User::Id(3), readme, viewer), true);
     assert_eq!(db.check(User::Id(3), readme, owner), false);
